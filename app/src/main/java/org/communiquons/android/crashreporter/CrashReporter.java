@@ -133,9 +133,69 @@ public class CrashReporter implements Thread.UncaughtExceptionHandler {
     @Override
     public void uncaughtException(Thread t, Throwable e) {
 
-        Log.v(TAG, "I am called !");
+        //Generate the report
+        String report = generateReport(t, e);
+        Log.e(TAG, "Generated report: " + report);
+
+        //Try to upload the report
+        if(!CrashUploader.upload(mApiURL, report, mAppKey, mAppToken))
+            Log.e(TAG, "Could not upload the report!");
 
         //Call default exception handler
         this.defaultUEH.uncaughtException(t, e);
     }
+
+    /**
+     * Generate the crash report
+     *
+     * @param t The thread where the exception occurred
+     * @param e The exception
+     * @return The report as a string
+     */
+    private String generateReport(Thread t, Throwable e){
+
+        //Begin report
+        String report = "Exception: " + e.toString() + "\n\n";
+
+        //Generic information
+        report += "Thread name: " + t.getName() + "\n";
+        report += "\n";
+
+
+        //Process stack trace
+        report += "---------- Stack trace ----------\n";
+        report += stackTraceToString(e.getStackTrace());
+        report += "---------------------------------\n\n\n";
+
+
+        //Process error cause
+        report += "------------ Cause --------------\n";
+        Throwable cause = e.getCause();
+        if(cause != null){
+            report += cause.getMessage() + "\n";
+            report += stackTraceToString(cause.getStackTrace());
+        }
+        else
+            report += "No data available.\n";
+        report += "---------------------------------\n";
+
+        return report;
+
+    }
+
+    /**
+     * Turn a stack trace array into a string
+     *
+     * @param array The array to convert
+     * @return Generated string
+     */
+    private String stackTraceToString(StackTraceElement[] array){
+        String string = "";
+        for(StackTraceElement el : array){
+            string += el.toString() + "\n";
+        }
+        return string;
+    }
+
+
 }
