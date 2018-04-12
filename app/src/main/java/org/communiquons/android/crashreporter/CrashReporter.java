@@ -57,11 +57,6 @@ public class CrashReporter implements Thread.UncaughtExceptionHandler {
     private Context mContext;
 
     /**
-     * Current activity
-     */
-    private Activity mActivity;
-
-    /**
      * Default UncaughtExceptionHandler
      */
     private Thread.UncaughtExceptionHandler defaultUEH;
@@ -84,16 +79,15 @@ public class CrashReporter implements Thread.UncaughtExceptionHandler {
     /**
      * Construct the library
      *
-     * @param activity A valid context (the application context will be stored)
+     * @param context A valid context (the application context will be stored)
      * @param url The URL where the reports have to be uploaded
      * @param key The application key
      * @param token The application token
      */
-    public CrashReporter(Activity activity, String url, String key, String token){
+    public CrashReporter(Context context, String url, String key, String token){
 
         //Set application context and activity references
-        mActivity = activity;
-        mContext = activity.getApplicationContext();
+        mContext = context.getApplicationContext();
 
         //Save api information
         mApiURL = url;
@@ -230,7 +224,7 @@ public class CrashReporter implements Thread.UncaughtExceptionHandler {
 
         //Delete the awaiting report
         if(!file.delete()){
-
+            Log.e(TAG, "An error occurred while trying to delete report file !");
         }
 
     }
