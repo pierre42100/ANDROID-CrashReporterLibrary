@@ -3,10 +3,15 @@ package org.communiquons.android.crashreporter;
 import android.app.Activity;
 import android.content.Context;
 import android.os.AsyncTask;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
@@ -37,14 +42,14 @@ public class CrashReporter implements Thread.UncaughtExceptionHandler {
     private static final int API_CONNEXION_TIMEOUT = 3000;
 
     /**
-     * Read timeout
-     */
-    private static final int API_READ_TIMEOUT = 3000;
-
-    /**
      * Method used to connect to the api
      */
     private static final String API_CONNEXION_METHOD = "POST";
+
+    /**
+     * Report file name
+     */
+    private static final String REPORT_FILENAME = "crash_report.txt";
 
     /**
      * Application context
@@ -162,8 +167,10 @@ public class CrashReporter implements Thread.UncaughtExceptionHandler {
         Log.e(TAG, "Generated report: " + report);
 
         //Try to upload the report
-        if(!upload(report))
-            Log.e(TAG, "Could not upload the report!");
+        if(!save_report(report))
+            Log.e(TAG, "Could not save the report!");
+        else
+            Log.v(TAG, "Report successfully saved for later upload.");
 
         //Call default exception handler
         this.defaultUEH.uncaughtException(t, e);
@@ -204,6 +211,27 @@ public class CrashReporter implements Thread.UncaughtExceptionHandler {
         report += "---------------------------------\n";
 
         return report;
+
+    }
+
+    /**
+     * Push online any awaiting report
+     */
+    public void uploadAwaitingReport(){
+
+        //Get the report file
+        File file = get_report_file(false);
+
+        //Check if the file exists or not
+        if(file == null){
+            Log.v(TAG, "Report file seems not to exists.");
+            return;
+        }
+
+        //Delete the awaiting report
+        if(!file.delete()){
+
+        }
 
     }
 
@@ -269,6 +297,73 @@ public class CrashReporter implements Thread.UncaughtExceptionHandler {
             e.printStackTrace();
             return false;
         }
+    }
 
+    /**
+     * Save the report locally for ulterior upload
+     *
+     * @param report The report to save
+     * @return TRUE for a success / FALSE else
+     */
+    private boolean save_report(String report){
+
+        //Get the file
+        File file = get_report_file(true);
+
+        //Check for error
+        if(file == null){
+            Log.e(TAG, "Could not create report file!");
+            return false;
+        }
+
+        try {
+
+            //Open the file for writing
+            OutputStream os = new BufferedOutputStream(new FileOutputStream(file, false));
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
+            writer.write(report);
+            writer.flush();
+            writer.close();
+            os.close();
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+
+        //Success
+        return true;
+    }
+
+    /**
+     * Get the saved report file
+     *
+     * @param create Create the file if does not exists
+     * @return The report file (null in case of failure)
+     */
+    @Nullable
+    private File get_report_file(boolean create){
+        File file = new File(mContext.getCacheDir(), REPORT_FILENAME);
+
+        //Check file existence
+        if(!file.exists()){
+
+            //Check if the file can be created
+            if(create) {
+                try {
+                    //Intend to create the file
+                    if (!file.createNewFile())
+                        return null;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return null;
+                }
+            }
+            else
+                return null;
+        }
+
+        return file;
     }
 }

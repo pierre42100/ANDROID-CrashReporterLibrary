@@ -31,16 +31,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         //Init the library
         CrashReporter reporter = new CrashReporter(this, "http://192.168.1.9:5695/",
                 "content_key", "content_token");
+        reporter.uploadAwaitingReport();
         Thread.setDefaultUncaughtExceptionHandler(reporter);
-
-
-        new AsyncTask<CrashReporter, Void, Void>(){
-            @Override
-            protected Void doInBackground(CrashReporter... params) {
-                params[0].upload("Test report empty.");
-                return null;
-            }
-        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, reporter);
 
     }
 
