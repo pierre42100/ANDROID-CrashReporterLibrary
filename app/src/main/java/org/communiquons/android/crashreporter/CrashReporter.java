@@ -4,16 +4,22 @@ import android.app.Activity;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.support.annotation.Nullable;
+import android.support.annotation.UiThread;
 import android.util.Log;
 
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -211,6 +217,7 @@ public class CrashReporter implements Thread.UncaughtExceptionHandler {
     /**
      * Push online any awaiting report
      */
+    @UiThread
     public void uploadAwaitingReport(){
 
         //Get the report file
@@ -222,12 +229,26 @@ public class CrashReporter implements Thread.UncaughtExceptionHandler {
             return;
         }
 
+        //Get report content
+        String report;
+        try {
+            report = readIs(new FileInputStream(file));
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        //Launch report upload
+        asynck_upload(report);
+
         //Delete the awaiting report
         if(!file.delete()){
             Log.e(TAG, "An error occurred while trying to delete report file !");
         }
 
     }
+
 
     /**
      * Turn a stack trace array into a string
@@ -244,12 +265,38 @@ public class CrashReporter implements Thread.UncaughtExceptionHandler {
     }
 
     /**
+     * Asynchronously upload a report to the server
+     *
+     * @param report The content of the report to upload
+     */
+    @UiThread
+    private void asynck_upload(String report){
+
+        new AsyncTask<String, Void, Boolean>(){
+
+            @Override
+            protected Boolean doInBackground(String... params) {
+                return upload(params[0]);
+            }
+
+            @Override
+            protected void onPostExecute(Boolean result) {
+                if(!result)
+                    Log.e(TAG, "An error occurred while trying to upload report!");
+                else
+                    Log.v(TAG, "The report has been successfully uploaded:");
+            }
+        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, report);
+
+    }
+
+    /**
      * Intend to upload the report online
      *
      * @param report The report to upload
      * @return TRUE in case of success / FALSE else
      */
-    public boolean upload(String report){
+    private boolean upload(String report){
 
         try {
 
@@ -359,5 +406,21 @@ public class CrashReporter implements Thread.UncaughtExceptionHandler {
         }
 
         return file;
+    }
+
+    /**
+     * Read an input stream into a string
+     *
+     * @param is The input stream to read
+     * @return Read string
+     */
+    private String readIs(InputStream is) throws IOException {
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+        StringBuilder out = new StringBuilder();
+        String line;
+        while((line = bufferedReader.readLine()) != null)
+            out.append(line);
+        bufferedReader.close();
+        return out.toString();
     }
 }
