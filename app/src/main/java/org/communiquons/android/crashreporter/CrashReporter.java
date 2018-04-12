@@ -2,7 +2,16 @@ package org.communiquons.android.crashreporter;
 
 import android.app.Activity;
 import android.content.Context;
+import android.os.AsyncTask;
 import android.util.Log;
+
+import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
 
 /**
  * Crash Reporter library
@@ -21,6 +30,21 @@ public class CrashReporter implements Thread.UncaughtExceptionHandler {
      * Debug tab
      */
     private static final String TAG = "CrashReporter";
+
+    /**
+     * Connexion timeout
+     */
+    private static final int API_CONNEXION_TIMEOUT = 3000;
+
+    /**
+     * Read timeout
+     */
+    private static final int API_READ_TIMEOUT = 3000;
+
+    /**
+     * Method used to connect to the api
+     */
+    private static final String API_CONNEXION_METHOD = "POST";
 
     /**
      * Application context
@@ -138,7 +162,7 @@ public class CrashReporter implements Thread.UncaughtExceptionHandler {
         Log.e(TAG, "Generated report: " + report);
 
         //Try to upload the report
-        if(!CrashUploader.upload(mApiURL, report, mAppKey, mAppToken))
+        if(!upload(report))
             Log.e(TAG, "Could not upload the report!");
 
         //Call default exception handler
@@ -197,5 +221,54 @@ public class CrashReporter implements Thread.UncaughtExceptionHandler {
         return string;
     }
 
+    /**
+     * Intend to upload the report online
+     *
+     * @param report The report to upload
+     * @return TRUE in case of success / FALSE else
+     */
+    public boolean upload(String report){
 
+        try {
+
+            //Prepare the request body
+            String requestBody = "key=" + URLEncoder.encode(mAppKey, "UTF-8") +
+                    "&token="+ URLEncoder.encode(mAppToken, "UTF-8")
+                    + "&report=" + URLEncoder.encode(report, "UTF-8");
+
+            //Prepare the connexion
+            URL url = new URL(mApiURL);
+
+            //Open URL connection
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+            //Setup a few settings
+            conn.setRequestMethod(API_CONNEXION_METHOD);
+            conn.setDoOutput(true);
+            conn.setDoInput(false);
+            conn.setConnectTimeout(API_CONNEXION_TIMEOUT);
+            conn.setChunkedStreamingMode(0);
+
+            //Connect to the server
+            conn.connect();
+
+            //Write report
+            OutputStream os = new BufferedOutputStream(conn.getOutputStream());
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
+            writer.write(requestBody);
+            writer.flush();
+            writer.close();
+            os.close();
+
+            conn.disconnect();
+
+            //Success
+            return true;
+
+        } catch (java.io.IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+
+    }
 }

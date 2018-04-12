@@ -1,5 +1,6 @@
 package org.communiquons.android.testapp;
 
+import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -31,6 +32,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         CrashReporter reporter = new CrashReporter(this, "http://192.168.1.9:5695/",
                 "content_key", "content_token");
         Thread.setDefaultUncaughtExceptionHandler(reporter);
+
+
+        new AsyncTask<CrashReporter, Void, Void>(){
+            @Override
+            protected Void doInBackground(CrashReporter... params) {
+                params[0].upload("Test report empty.");
+                return null;
+            }
+        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, reporter);
 
     }
 
