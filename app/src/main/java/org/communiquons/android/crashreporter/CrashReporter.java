@@ -1,6 +1,8 @@
 package org.communiquons.android.crashreporter;
 
+import android.app.Activity;
 import android.content.Context;
+import android.util.Log;
 
 /**
  * Crash Reporter library
@@ -13,12 +15,27 @@ import android.content.Context;
  * Created by pierre on 4/12/18.
  */
 
-public class CrashReporter {
+public class CrashReporter implements Thread.UncaughtExceptionHandler {
+
+    /**
+     * Debug tab
+     */
+    private static final String TAG = "CrashReporter";
 
     /**
      * Application context
      */
     private Context mContext;
+
+    /**
+     * Current activity
+     */
+    private Activity mActivity;
+
+    /**
+     * Default UncaughtExceptionHandler
+     */
+    private Thread.UncaughtExceptionHandler defaultUEH;
 
     /**
      * API URL
@@ -38,20 +55,24 @@ public class CrashReporter {
     /**
      * Construct the library
      *
-     * @param context A valid context (the application context will be stored)
+     * @param activity A valid context (the application context will be stored)
      * @param url The URL where the reports have to be uploaded
      * @param key The application key
      * @param token The application token
      */
-    public CrashReporter(Context context, String url, String key, String token){
+    public CrashReporter(Activity activity, String url, String key, String token){
 
-        //Set application context
-        mContext = context.getApplicationContext();
+        //Set application context and activity references
+        mActivity = activity;
+        mContext = activity.getApplicationContext();
 
         //Save api information
         mApiURL = url;
         mAppKey = key;
         mAppToken = token;
+
+        //Save default thread uncaught exception handler
+        this.defaultUEH = Thread.getDefaultUncaughtExceptionHandler();
 
     }
 
@@ -100,5 +121,21 @@ public class CrashReporter {
         this.mAppToken = appToken;
     }
 
+    /**
+     * Get the application token
+     *
+     * @return The application token
+     */
+    public String getAppToken() {
+        return mAppToken;
+    }
 
+    @Override
+    public void uncaughtException(Thread t, Throwable e) {
+
+        Log.v(TAG, "I am called !");
+
+        //Call default exception handler
+        this.defaultUEH.uncaughtException(t, e);
+    }
 }

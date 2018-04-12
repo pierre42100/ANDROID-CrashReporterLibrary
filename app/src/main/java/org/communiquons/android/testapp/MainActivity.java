@@ -30,6 +30,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         //Init the library
         CrashReporter reporter = new CrashReporter(this, "http://192.168.1.9:5695/",
                 "content_key", "content_token");
+        Thread.setDefaultUncaughtExceptionHandler(reporter);
 
     }
 
