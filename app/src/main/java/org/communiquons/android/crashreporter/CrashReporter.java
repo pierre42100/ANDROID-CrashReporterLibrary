@@ -78,19 +78,13 @@ public class CrashReporter implements Thread.UncaughtExceptionHandler {
     private String mAppKey;
 
     /**
-     * Application token
-     */
-    private String mAppToken;
-
-    /**
      * Construct the library
      *
      * @param context A valid context (the application context will be stored)
      * @param url The URL where the reports have to be uploaded
      * @param key The application key
-     * @param token The application token
      */
-    public CrashReporter(Context context, String url, String key, String token){
+    public CrashReporter(Context context, String url, String key){
 
         //Set application context and activity references
         mContext = context.getApplicationContext();
@@ -98,7 +92,6 @@ public class CrashReporter implements Thread.UncaughtExceptionHandler {
         //Save api information
         mApiURL = url;
         mAppKey = key;
-        mAppToken = token;
 
         //Save default thread uncaught exception handler
         this.defaultUEH = Thread.getDefaultUncaughtExceptionHandler();
@@ -141,23 +134,6 @@ public class CrashReporter implements Thread.UncaughtExceptionHandler {
         return mAppKey;
     }
 
-    /**
-     * Set the application token
-     *
-     * @param appToken The application token
-     */
-    public void setAppToken(String appToken) {
-        this.mAppToken = appToken;
-    }
-
-    /**
-     * Get the application token
-     *
-     * @return The application token
-     */
-    public String getAppToken() {
-        return mAppToken;
-    }
 
     @Override
     public void uncaughtException(Thread t, Throwable e) {
@@ -189,7 +165,7 @@ public class CrashReporter implements Thread.UncaughtExceptionHandler {
         String report = "Exception: " + e.toString() + "\n\n";
 
         //Generic information
-        report += "Thread name: " + t.getName() + "\n";
+        report += "Thread name: " + t.getName() + "\n\n";
         report += "\n";
 
 
@@ -301,9 +277,8 @@ public class CrashReporter implements Thread.UncaughtExceptionHandler {
         try {
 
             //Prepare the request body
-            String requestBody = "key=" + URLEncoder.encode(mAppKey, "UTF-8") +
-                    "&token="+ URLEncoder.encode(mAppToken, "UTF-8")
-                    + "&report=" + URLEncoder.encode(report, "UTF-8");
+            String requestBody = "app_key=" + URLEncoder.encode(mAppKey, "UTF-8")
+                    + "&report=" + report;
 
             //Prepare the connexion
             URL url = new URL(mApiURL);
@@ -362,7 +337,7 @@ public class CrashReporter implements Thread.UncaughtExceptionHandler {
             //Open the file for writing
             OutputStream os = new BufferedOutputStream(new FileOutputStream(file, false));
             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
-            writer.write(report);
+            writer.write(URLEncoder.encode(report, "UTF-8"));
             writer.flush();
             writer.close();
             os.close();

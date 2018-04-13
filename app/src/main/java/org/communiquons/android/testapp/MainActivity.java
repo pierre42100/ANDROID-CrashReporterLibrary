@@ -29,8 +29,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         findViewById(R.id.button).setOnClickListener(this);
 
         //Init the library
-        CrashReporter reporter = new CrashReporter(this, "http://192.168.1.9:5695/",
-                "content_key", "content_token");
+        CrashReporter reporter = new CrashReporter(this,
+                "http://devweb.local/CrashReporterWeb/project/api/v1/push",
+                "9boqkhxKWVneflZu1EMp5AQcIaDYRTN3");
         reporter.uploadAwaitingReport();
         Thread.setDefaultUncaughtExceptionHandler(reporter);
 
