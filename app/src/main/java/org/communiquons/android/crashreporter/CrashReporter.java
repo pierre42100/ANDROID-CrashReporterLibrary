@@ -163,6 +163,9 @@ public class CrashReporter implements Thread.UncaughtExceptionHandler {
 
         //Generic information
         report += "Thread name: " + t.getName() + "\n\n";
+        report += "Application ID: " + BuildConfig.APPLICATION_ID;
+        report += "Application version: " + BuildConfig.VERSION_NAME;
+        report += "Code version: " + BuildConfig.VERSION_CODE;
         report += "\n";
 
 
