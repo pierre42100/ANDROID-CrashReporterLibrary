@@ -1,6 +1,5 @@
 package org.communiquons.android.crashreporter;
 
-import android.app.Activity;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.support.annotation.Nullable;
@@ -12,14 +11,12 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -191,10 +188,41 @@ public class CrashReporter implements Thread.UncaughtExceptionHandler {
     }
 
     /**
-     * Push online any awaiting report
+     * Turn a stack trace array into a string
+     *
+     * @param array The array to convert
+     * @return Generated string
+     */
+    private String stackTraceToString(StackTraceElement[] array){
+        String string = "";
+        for(StackTraceElement el : array){
+            string += el.toString() + "\n";
+        }
+        return string;
+    }
+
+    /**
+     * Asynchronously upload a report to the server
      */
     @UiThread
     public void uploadAwaitingReport(){
+
+        new AsyncTask<Void, Void, Void>(){
+
+            @Override
+            protected Void doInBackground(Void... params) {
+                async_upload();
+                return null;
+            }
+
+        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
+    }
+
+    /**
+     * Push online any awaiting report
+     */
+    private void async_upload(){
 
         //Get the report file
         File file = get_report_file(false);
@@ -216,53 +244,15 @@ public class CrashReporter implements Thread.UncaughtExceptionHandler {
         }
 
         //Launch report upload
-        asynck_upload(report);
+        if(!upload(report))
+            Log.e(TAG, "An error occurred while trying to upload report!");
+        else
+            Log.v(TAG, "The report has been successfully uploaded:");
 
         //Delete the awaiting report
         if(!file.delete()){
             Log.e(TAG, "An error occurred while trying to delete report file !");
         }
-
-    }
-
-
-    /**
-     * Turn a stack trace array into a string
-     *
-     * @param array The array to convert
-     * @return Generated string
-     */
-    private String stackTraceToString(StackTraceElement[] array){
-        String string = "";
-        for(StackTraceElement el : array){
-            string += el.toString() + "\n";
-        }
-        return string;
-    }
-
-    /**
-     * Asynchronously upload a report to the server
-     *
-     * @param report The content of the report to upload
-     */
-    @UiThread
-    private void asynck_upload(String report){
-
-        new AsyncTask<String, Void, Boolean>(){
-
-            @Override
-            protected Boolean doInBackground(String... params) {
-                return upload(params[0]);
-            }
-
-            @Override
-            protected void onPostExecute(Boolean result) {
-                if(!result)
-                    Log.e(TAG, "An error occurred while trying to upload report!");
-                else
-                    Log.v(TAG, "The report has been successfully uploaded:");
-            }
-        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, report);
 
     }
 

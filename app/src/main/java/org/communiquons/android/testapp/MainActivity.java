@@ -1,8 +1,7 @@
 package org.communiquons.android.testapp;
 
-import android.os.AsyncTask;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 
@@ -28,7 +27,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         //Make the button lives
         findViewById(R.id.button).setOnClickListener(this);
 
-        //Init the library
+        //Init the crash library
         CrashReporter reporter = new CrashReporter(this,
                 "http://devweb.local/CrashReporterWeb/project/api/v1/push",
                 "9boqkhxKWVneflZu1EMp5AQcIaDYRTN3");
